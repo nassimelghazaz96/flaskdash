@@ -411,8 +411,8 @@ def update_graph4(n_clicks,selected_values):
 #     time.sleep(5000)
 #     return value
 
-if __name__ == "__main__":
-    app.run_server(debug=True)
+#if __name__ == "__main__":
+#    app.run_server(debug=True)
 
 
 
