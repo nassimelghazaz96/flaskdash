@@ -172,14 +172,7 @@ app.layout = html.Div([
                         ),
 
 
-                        html.Div([
-                            html.Div(children = [
-                                    dcc.Input(id="input-1", value='Input triggers local spinner'),
-                                 dcc.Loading(id="loading-1", children=[html.Div(id="loading-output-1")], type="default"),])
-
-
-
-                        ], className='row')
+                      
 
 ], className='ten columns offset-by-one',
 )
@@ -405,14 +398,9 @@ def update_graph4(n_clicks,selected_values):
     return figure
 
 
-#Test Spinner
-# @app.callback(Output("loading-output-1", "children"), [Input("input-1", "value")])
-# def input_triggers_spinner(value):
-#     time.sleep(5000)
-#     return value
 
-#if __name__ == "__main__":
-#    app.run_server(debug=True)
+if __name__ == "__main__":
+    	app.run()
 
 
 
@@ -427,37 +415,3 @@ def update_graph4(n_clicks,selected_values):
 
 
 
-
-
-
-
-
-    # app.layout = html.Div([html.H4('Demo'),
-    #                        html.Div([html.P('Chercher le numéro de société  ', style={'display': 'inline-block'}),
-    #                                  dcc.Input(type='text', value='', id='input1'),
-    #                                  dt.DataTable(
-    #                                      rows=df.head(100).to_dict('records'),
-    #                                      columns=sorted(df.columns),
-    #                                      filterable=False,
-    #                                      sortable=True,
-    #                                      selected_row_indices=[],
-    #                                      id='datatable'
-    #                                  )])])
-    #
-    #
-    # def filter(val):
-    #     # """
-    #     # For user selections, return the relevant in-memory data frame.
-    #     # """
-    #     # if clicks:
-    #     #     if clicks % 2 == 1:
-    #     #         df.sort_values('number', ascending=False, inplace=True)
-    #     #     else:
-    #     #         df.sort_values('number', ascending=True, inplace=True)
-    #     return df.loc[df.P2NUM_VOIE == val]
-    #
-    #
-    # @app.callback(Output('datatable', 'rows'), [Input('input1', 'value')])
-    # def update(val):
-    #     df = filter(val)
-    #     return df.head(100).to_dict('records')
