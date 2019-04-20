@@ -1,4 +1,4 @@
-import dash
+﻿import dash
 from flask import Flask
 from dash.dependencies import Input, Output, State
 import dash_core_components as dcc
@@ -9,6 +9,16 @@ import pandas as pd
 import numpy as np
 import plotly
 import time
+
+
+
+server = Flask(__name__)
+server.secret_key = os.environ.get('secret_key', 'secret')
+app = dash.Dash(name = __name__, server = server)
+app.config.supress_callback_exceptions = True
+
+
+
 
 plotly.tools.set_credentials_file(username='nassimppcmarketer@gmail.com', api_key='8K3odOzrKSx6pmaP8ubP')
 
@@ -23,7 +33,6 @@ plotly.tools.set_credentials_file(username='nassimppcmarketer@gmail.com', api_ke
 graph_style={'backgroundColor':'black', 'border-style': 'solid', 'border-color': 'white', 'margin-top':'10'}
 
 
-app = dash.Dash(__name__)
 mapbox_access_token='pk.eyJ1IjoibmFzc2ltMjgiLCJhIjoiY2p1bzFza3E2MDhuMjQzc2o4dW85ZWZndiJ9.wlgnuyzjaaZM0ecOgZ2FKw'
 text_color='#eaeaea'
 #catégorisation (pour le filtrage par pays)
