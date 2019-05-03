@@ -1,4 +1,4 @@
-﻿import dash
+import dash
 from flask import Flask
 from dash.dependencies import Input, Output, State
 import dash_core_components as dcc
@@ -20,36 +20,23 @@ import dateutil
 # import copy
 
 from pylab import *
+import base64
+from fbprophet import Prophet
 
 
 
+logout_img = "logout.png" # replace with your own image
+encoded_image = base64.b64encode(open(logout_img, 'rb').read())
 
 #Importation des données organisées
+datasets={}
+num_voies=[]
+for i in range (1,25):
+    num_voies.append(i)
+    df=pd.read_csv('CSVs/organized'+str(i)+'.csv', sep=';')
+    df['P2HTU_TRANSACTION'] = pd.to_datetime(df['P2HTU_TRANSACTION'])
+    datasets[str(i)]=df
 
-df1=pd.read_csv('CSVs/organized1.csv', sep=';')
-df2=pd.read_csv('CSVs/organized2.csv', sep=';')
-df3=pd.read_csv('CSVs/organized3.csv', sep=';')
-df4=pd.read_csv('CSVs/organized4.csv', sep=';')
-df5=pd.read_csv('CSVs/organized5.csv', sep=';')
-df6=pd.read_csv('CSVs/organized6.csv', sep=';')
-df7=pd.read_csv('CSVs/organized7.csv', sep=';')
-df8=pd.read_csv('CSVs/organized8.csv', sep=';')
-
-
-
-
-df1['P2HTU_TRANSACTION'] = pd.to_datetime(df1['P2HTU_TRANSACTION'])
-df2['P2HTU_TRANSACTION'] = pd.to_datetime(df2['P2HTU_TRANSACTION'])
-df3['P2HTU_TRANSACTION'] = pd.to_datetime(df3['P2HTU_TRANSACTION'])
-df4['P2HTU_TRANSACTION'] = pd.to_datetime(df4['P2HTU_TRANSACTION'])
-df5['P2HTU_TRANSACTION'] = pd.to_datetime(df5['P2HTU_TRANSACTION'])
-df6['P2HTU_TRANSACTION'] = pd.to_datetime(df6['P2HTU_TRANSACTION'])
-df7['P2HTU_TRANSACTION'] = pd.to_datetime(df7['P2HTU_TRANSACTION'])
-df8['P2HTU_TRANSACTION'] = pd.to_datetime(df8['P2HTU_TRANSACTION'])
-
-
-datasets={"1":df1,"2":df2,"3":df3,"4":df4,"5":df5,"6":df6,"7":df7,"8":df8}
-num_voies=[1,2,3,4,5,6,7,8]
 
 
 
@@ -170,10 +157,33 @@ app.layout =  html.Div([
                                 html.Button(id='valider', n_clicks=0, children='valider',
                                             style={'fontSize': 12, 'margin-top': 30, 'color': text_color}),
 
+
+
                             ],
                                 className='one columns',
                                 style={'margin-top': 5, 'margin-left':50}
                             ),
+
+                            html.Div([
+                                html.A([
+                                    html.Img(src='data:image/png;base64,{}'.format(encoded_image.decode()),style={
+                                        'height': 40,
+                                        'width': 40,
+                                        'float':'right',
+                                        'position': 'relative',
+                                        'padding-top': 30,
+                                        # 'padding-right': 15,
+                                        # 'margin-left':30
+                                    },),
+
+                                ], href="/login")
+                            ], className="three columns",style={'margin-top': 5, 'margin-left':50})
+
+
+
+
+
+
                         ],)
 
 
@@ -369,6 +379,26 @@ app.layout =  html.Div([
                     ],
                         className='row'),
 
+                    ####Forecasting Row ###############################################
+                    html.Div([
+                        html.Div([
+
+                            dcc.Loading(
+                                id="loading-9",
+                                children=html.Div([html.Div([
+
+                                    dcc.Graph(
+                                        id="graph_prev"
+                                    )
+
+                                ], )]),
+                                type="circle",
+                            )
+
+                        ], className='twelve columns', style=graph_style
+                        )
+                    ],
+                        className='row'),
 
 
 
@@ -1227,7 +1257,185 @@ def change_voie(selected_gare):
 
 
 
+@app.callback(Output('graph_prev','figure'),
+              [Input('valider','n_clicks')],
+              [State('dropdown_voie','value')])
+def update_graph8(n_clicks,selected_values):
+    one_df=datasets[str(selected_values[-1])]
+    trainSize=int(len(one_df)*0.90)
+    one_df=one_df[['P2HTU_TRANSACTION','nbr_transac']]
+    one_df.rename(index=str, columns={'P2HTU_TRANSACTION': 'ds', 'nbr_transac': 'y'}, inplace=True)
+    one_df.y=np.log(one_df.y+2)
+    one_df['floor']=1
+    one_df['cap'] = 1500
+    train_df=one_df[:trainSize+1]
+    test_df = one_df[trainSize:]
+    m = Prophet(changepoint_prior_scale=10)
+    m.add_seasonality(name='mid-month', period=7, fourier_order=12)
+    m.fit(train_df)
+    portee=len(test_df)
+    future = m.make_future_dataframe(periods=portee)
+    future['floor'] = 1
+    future['cap'] = 1500
+    forecast = m.predict(future)
 
+
+    # m2=Prophet(changepoint_prior_scale=50)
+    # m2.fit(one_df)
+    # portee2=10
+    # future2=m2.make_future_dataframe(periods=portee2)
+    # future2['floor'] = 1.5
+    # future2['cap'] = 1500
+    # forecast2 = m.predict(future2)
+
+
+
+
+
+
+
+
+
+
+
+
+
+    trace_0 = {
+        "x": one_df.ds,
+        "y": np.exp(one_df.y)-2,
+        "line": {
+            "color": "blue",
+            "shape": "spline",
+            "width": 4
+        },
+        "mode": "lines",
+        "name": "Données réelles",
+        "type": "scatter",
+        "xaxis": "x",
+        "yaxis": "y"
+    }
+    trace0 = {
+        "x": train_df.ds,
+        "y": np.exp(train_df.y)-2,
+        "line": {
+            "color": "rgb(244, 65, 208)",
+            "shape": "spline",
+            "width": 4
+        },
+        "mode": "lines",
+        "name": "Données d'entraînement",
+        "type": "scatter",
+        "xaxis": "x",
+        "yaxis": "y"
+    }
+    trace1 = {
+        "x": list(forecast.ds)[-portee-1:],
+        "y": np.exp(np.array(forecast.yhat_lower)[-portee-1:])-2,
+        "line": {
+            "color": "rgb(224, 125, 127)",
+            "shape": "spline",
+            "width": 0.1
+        },
+        "mode": "lines",
+        "showlegend": False,
+        "type": "scatter",
+        "name": "(bande inf)",
+        "xaxis": "x",
+        "yaxis": "y"
+    }
+    trace2 = {
+        "x": list(forecast.ds)[-portee-1:],
+        "y": np.exp(np.array(forecast.yhat_upper)[-portee-1:])-2,
+        "fill": "tonexty",
+        "line": {
+            "color": "rgb(224, 125, 127)",
+            "shape": "spline",
+            "width": 0.1
+        },
+        "showlegend": False,
+        "mode": "lines",
+        "name": "(bande sup)",
+        "type": "scatter",
+        "xaxis": "x",
+        "yaxis": "y"
+    }
+    trace3 = {
+        "x": list(forecast.ds)[-portee-1:],
+        "y": np.exp(np.array(forecast.yhat)[-portee-1:])-2,
+        "line": {
+            "color": "red",
+            "shape": "spline",
+            "width": 4,
+            "dash": "dot",
+        },
+        "mode": "lines",
+        "name": "test du modèle",
+        "type": "scatter",
+        "xaxis": "x",
+        "yaxis": "y"
+    }
+
+    trace4 = {
+        "x": list(forecast.ds)[:-portee],
+        "y": np.exp(np.array(forecast.yhat)[:-portee])-2,
+        "line": {
+            "color": "orange",
+            "shape": "spline",
+            "width": 4
+        },
+        "mode": "lines",
+        "name": "Entraînement du modèles",
+        "type": "scatter",
+        "xaxis": "x",
+        "yaxis": "y"
+    }
+    trace5={
+        "x": list(test_df.ds),
+        "y": np.exp(np.array(test_df.y))-2,
+        "line": {
+            "color": "green",
+            "shape": "spline",
+            "width": 4
+        },
+        "mode": "lines",
+        "name": "Données de Test",
+        "type": "scatter",
+        "xaxis": "x",
+        "yaxis": "y"
+    }
+
+    # trace6 = {
+    #     "x": list(forecast2.ds)[-portee2: ],
+    #     "y": list(forecast2.yhat)[-portee2: ],
+    #     "line": {
+    #         "color": "red",
+    #         "shape": "spline",
+    #         "width": 4
+    #     },
+    #     "mode": "lines",
+    #     "name": "prevision sur "+str(portee2)+ " unités de temps",
+    #     "type": "scatter",
+    #     "xaxis": "x",
+    #     "yaxis": "y"
+    # }
+
+
+
+
+
+
+    data = [trace_0,trace0,trace3,trace4,trace5]
+    figure = go.Figure(
+        data=data,
+       layout=go.Layout(
+                    title='Prévisions du nombre de transactions',
+                    font=dict(family='Courier New, monospace', size=15, color=text_color),
+                    paper_bgcolor=background_color_graph,
+                    plot_bgcolor=background_color_graph
+                )
+
+    )
+    return figure
 
 
 
@@ -1266,6 +1474,18 @@ def change_voie(selected_gare):
 # def input_triggers_spinner(value):
 #     time.sleep(5000)
 #     return value
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
