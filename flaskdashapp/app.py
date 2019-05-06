@@ -31,12 +31,34 @@ encoded_image = base64.b64encode(open(logout_img, 'rb').read())
 #Importation des données organisées
 datasets={}
 num_voies=[]
+
+#######################Tabs Style###############
+
+tabs_styles = {
+    'height': '44px'
+}
+tab_style = {
+    'borderBottom': '1px solid #d6d6d6',
+    'padding': '6px',
+    'fontWeight': 'bold',
+    'backgroundColor': 'black',
+    'color': 'white',
+}
+
+tab_selected_style = {
+    'borderTop': '1px solid #d6d6d6',
+    'borderBottom': '1px solid #d6d6d6',
+    'backgroundColor': '#5e0000',
+    'color': 'white',
+    'padding': '6px'
+}
+
+#################################################
 for i in range (1,25):
     num_voies.append(i)
     df=pd.read_csv('CSVs/organized'+str(i)+'.csv', sep=';')
     df['P2HTU_TRANSACTION'] = pd.to_datetime(df['P2HTU_TRANSACTION'])
     datasets[str(i)]=df
-
 
 
 
@@ -191,13 +213,34 @@ app.layout =  html.Div([
                     ], className='row', style={'background-color': '#8e1111', 'height':100} ),
 
 
+
+##################Tabs bar##########################
+
+                     html.Div([
+                        dcc.Tabs(id="tabs-styled-with-inline", value='tab-1', children=[
+                            dcc.Tab(label='Transactions', value='tab-1', style=tab_style, selected_style=tab_selected_style),
+                            dcc.Tab(label='Méthodes de Paiement', value='tab-2', style=tab_style, selected_style=tab_selected_style),
+                            dcc.Tab(label="Modes d\'exploitations", value='tab-3', style=tab_style, selected_style=tab_selected_style),
+                        ], style=tabs_styles),
+                        html.Div(id='tabs-content-inline')
+                    ]),
+
+
+
+
+
+
+
+
+####################################################
+
+
+
     html.Div([
 
 
-
-
                 html.Div([
-                        ################################## Filters ROW ############################################
+
 
 
 
@@ -422,25 +465,14 @@ app.layout =  html.Div([
 ],)
 
 
-@app.callback(Output('graph_nbtransac','figure'),
-              [Input('valider','n_clicks')],
+@app.callback([Output('graph_nbtransac','figure'),Output('graph_nbtransac','style')],
+              [Input('valider','n_clicks'),  Input('tabs-styled-with-inline','value')],
               [State('dropdown_voie','value')])
-def update_graph1(n_clicks,selected_values):
+def update_graph1(n_clicks,value,selected_values):
     arranged_data = []
-    for value in selected_values:
-        selected_data=datasets[str(int(value))]
-        # s = pd.to_datetime(selected_data['P2HTU_TRANSACTION'])
-        # ts= pd.DataFrame(selected_data).set_index('P2HTU_TRANSACTION').resample('D').size().reset_index(name='nbr_transac')
-        arranged_data.append({'x': list(selected_data['P2HTU_TRANSACTION']),
-                              'y': list(selected_data['nbr_transac']),
-                              'type': 'line', 'name': 'voie N°'+str(value), 'line':dict(
-                shape="spline",
-                smoothing="2",), 'mode':'lines+markers','marker':dict(symbol='diamond-open')})
-
     figure = {
         'data': arranged_data,
         'layout': {
-
 
             'title': 'Nombre de transactions',
 
@@ -480,9 +512,9 @@ def update_graph1(n_clicks,selected_values):
                              step='year',
                              stepmode='backward'),
                         dict(step='all')
-                    ],), bgcolor = '#000000',
-        bordercolor = '#FFFFFF',
-        font = dict(size=11)
+                    ], ), bgcolor='#000000',
+                    bordercolor='#FFFFFF',
+                    font=dict(size=11)
                 ),
 
                 rangeslider=dict(
@@ -511,8 +543,27 @@ def update_graph1(n_clicks,selected_values):
 
         }
     }
+    if(value=='tab-1'):
+        style={'display': 'block'}
 
-    return figure
+        for value in selected_values:
+            selected_data=datasets[str(int(value))]
+            # s = pd.to_datetime(selected_data['P2HTU_TRANSACTION'])
+            # ts= pd.DataFrame(selected_data).set_index('P2HTU_TRANSACTION').resample('D').size().reset_index(name='nbr_transac')
+            arranged_data.append({'x': list(selected_data['P2HTU_TRANSACTION']),
+                                  'y': list(selected_data['nbr_transac']),
+                                  'type': 'line', 'name': 'voie N°'+str(value), 'line':dict(
+                    shape="spline",
+                    smoothing="2",), 'mode':'lines+markers','marker':dict(symbol='diamond-open')})
+
+
+
+        return figure,style
+    else:
+        style = {'display': 'none'}
+
+        return figure,style
+
 
 
 
@@ -1440,6 +1491,29 @@ def update_graph8(n_clicks,selected_values):
 
 
 
+#Gestion d'affichage des Tabs
+
+# @app.callback([Output('graph_prev','')],
+#              )
+# def display_manegr(value):
+#     print(value)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -1474,30 +1548,6 @@ def update_graph8(n_clicks,selected_values):
 # def input_triggers_spinner(value):
 #     time.sleep(5000)
 #     return value
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
